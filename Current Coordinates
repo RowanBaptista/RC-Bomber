@@ -1,0 +1,43 @@
+#include <TinyGPS.h>
+#include <HardwareSerial.h>
+
+// Create an instance of the TinyGPS object
+TinyGPS gps;
+
+// Define the serial connections
+HardwareSerial gpsSerial(1);
+
+void setup() {
+  Serial.begin(115200);  // For serial monitor
+  gpsSerial.begin(9600, SERIAL_8N1, 16, 17);  // GPS serial communication on pins 16 (RX) and 17 (TX)
+}
+
+void loop() {
+  bool newData = false;
+  unsigned long start = millis();
+
+  // Read data from the GPS for 100ms
+  while (millis() - start < 100) {
+    while (gpsSerial.available()) {
+      char c = gpsSerial.read();
+      if (gps.encode(c)) {
+        newData = true;
+      }
+    }
+  }
+
+  if (newData) {
+    float flat, flon;
+    unsigned long fix_age;
+    gps.f_get_position(&flat, &flon, &fix_age);
+
+    if (fix_age == TinyGPS::GPS_INVALID_AGE) {
+      Serial.println("No fix");
+    } else {
+      Serial.print("Latitude: ");
+      Serial.println(flat, 6);
+      Serial.print("Longitude: ");
+      Serial.println(flon, 6);
+    }
+  }
+}
